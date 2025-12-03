@@ -31,13 +31,15 @@ void erro_arquivo() {
     exit(0);
 }
 
-// A
+// Alocar matriz
 int **alocar_matriz(int n) {
-    int **matriz = malloc(n * sizeof(int*));     // ponteiros das linhas
-    int *dados = malloc(n * n * sizeof(int));    // bloco único
+    // Ponteiros das linhas
+    int **matriz = malloc(n * sizeof(int*));     
+    int *dados = malloc(n * n * sizeof(int));    
 
     for (int i = 0; i < n; i++) {
-        matriz[i] = dados + (i * n); // aponta para cada linha
+        // Aponta para cada linha
+        matriz[i] = dados + (i * n); 
     }
 
     return matriz;
@@ -83,6 +85,92 @@ void ler_arquivo(FILE* fp, TipoRelacao* relacao){
     }
 }
 
+void gerar_dot(TipoRelacao *relacao, char *arquivo_saida, int **matriz_fecho) {
+    FILE *fp = fopen(arquivo_saida, "w");
+    if (!fp) {
+        printf("Erro ao criar arquivo DOT.\n");
+        return;
+    }
+
+    fprintf(fp, "digraph Relacao {\n");
+
+    int n = relacao->tam_conjunto;
+
+    // Nós
+    for (int i = 1; i <= n; i++) {
+        fprintf(fp, "    %d;\n", i);
+    }
+
+    fprintf(fp, "\n");
+
+    // Arestas (relações)
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
+            if (relacao->matriz[i][j] == 1) {
+                fprintf(fp, "    %d -> %d;\n", i + 1, j + 1);
+            }
+        }
+    }
+
+    fprintf(fp, "}\n");
+    fclose(fp);
+
+    printf("[SUCESSO] Arquivo DOT gerado: %s\n", arquivo_saida);
+}
+
+// A relação R em um conjunto A é chamada de reflexiva se (x, x) ∈ R para
+// todo elemento x ∈ A.
+int reflexiva(TipoRelacao *relacao){
+    for (int i = 0; i < relacao->tam_conjunto-1; i++) {
+        if ((relacao->matriz[i][i]) == 0){
+            return 0;
+        }
+    }
+    return 1;
+}
+
+// Uma relação R em um conjunto A é chamada de simétrica se (y, x) ∈ R
+// sempre que (x, y) ∈ R.
+int simetrica(TipoRelacao *relacao){
+    for (int i = 0; i < relacao->tam_conjunto-1; i++) {
+        for (int j = 0; j < relacao->tam_conjunto-1; j++) {
+            // Percorre todos, se tem ida, entra no if
+            if ((relacao->matriz[i][j]) == 1){
+                // Se não tem volta, retorna zero
+                if ((relacao->matriz[j][i]) == 0){
+                    return 0;
+                }   
+            }
+        }
+    }
+    // Se todas as idas voltaram, retorna sucesso
+    return 1;
+}
+
+// Uma relação R em um conjunto A é chamada transitiva se, sempre que
+// (x, y) ∈ R e (y, z) ∈ R, então (x, z) ∈ R, ∀x, y, z ∈ A.
+int transitiva(TipoRelacao *relacao) {
+    for (int i = 0; i < relacao->tam_conjunto-1; i++) {
+        for (int j = 0; j < relacao->tam_conjunto-1; j++) {
+            // Percorre todos, se xRy, entra no if
+            if ((relacao->matriz[i][j]) == 1){
+                for (int k = 0; k < relacao->tam_conjunto-1; k++) {
+                    // Se yRz, entra no if
+                    if ((relacao->matriz[j][k]) == 1){
+                        // Se x não se relaciona com z, retorna 0
+                        if ((relacao->matriz[i][k]) == 0){
+                            return 0;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    // Se for transitiva, retorna sucesso
+    return 1;
+}
+
+
 int main(int argc, char **argv)
 {
     char* StrEntrada;
@@ -104,6 +192,18 @@ int main(int argc, char **argv)
     TipoRelacao relacao;
 
     ler_arquivo(fp, &relacao);
+
+    int** matriz;
+    gerar_dot(&relacao, StrSaida, matriz);
+
+    relacao.reflexiva = reflexiva(&relacao);
+    printf("Reflexiva: %d\n", relacao.reflexiva);
+
+    relacao.simetrica = simetrica(&relacao);
+    printf("Simetrica: %d\n", relacao.simetrica);
+
+    relacao.transitiva = transitiva(&relacao);
+    printf("Transitiva: %d\n", relacao.transitiva);
 
     /* Encerra a aplicacao */
     exit(0);
