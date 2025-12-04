@@ -21,7 +21,6 @@ typedef struct
     int** matriz;
     int reflexiva;
     int simetrica;
-    int antiSimetrica;
     int transitiva;
 }TipoRelacao;
 
@@ -291,27 +290,23 @@ int main(int argc, char **argv)
     ler_arquivo(fp, &relacao);
 
     // Preenche os dados das propriedades da relação recebida
-
     relacao.reflexiva = reflexiva(&relacao);
-    printf("Reflexiva: %d\n", relacao.reflexiva);
-
     relacao.simetrica = simetrica(&relacao);
-    printf("Simetrica: %d\n", relacao.simetrica);
-
     relacao.transitiva = transitiva(&relacao);
-    printf("Transitiva: %d\n", relacao.transitiva);
 
     // Fecho Reflexivo
 
     // matriz_fecho recebe a matriz preenchida na sub-rotina com os arcos necessários para a relação 
     // ter a propriedade reflexiva
     int** matriz_fecho_reflexivo = fecho_reflexivo(&relacao);
-    printf("\nMatriz Fecho Reflexivo: \n");
-    for (int i = 0; i < relacao.tam_conjunto; i++){
-        for (int j = 0; j < relacao.tam_conjunto; j++){
-            printf(" %d ", matriz_fecho_reflexivo[i][j]);
+    if (relacao.simetrica == 0) {
+        printf("\nMatriz Fecho Reflexivo: \n");
+        for (int i = 0; i < relacao.tam_conjunto; i++){
+            for (int j = 0; j < relacao.tam_conjunto; j++){
+                printf(" %d ", matriz_fecho_reflexivo[i][j]);
+            }
+            printf("\n");
         }
-        printf("\n");
     }
 
     // Concatena nome recebido por comando para o nome do arquivo no fecho
@@ -324,15 +319,17 @@ int main(int argc, char **argv)
     // matriz_fecho recebe a matriz preenchida na sub-rotina com os arcos necessários para a relação 
     // ter a propriedade simétrica
     int** matriz_fecho_simetrico = fecho_simetrico(&relacao);
-    printf("\nMatriz Fecho Simetrico: \n");
-    for (int i = 0; i < relacao.tam_conjunto; i++){
-        for (int j = 0; j < relacao.tam_conjunto; j++){
-            printf(" %d ", matriz_fecho_simetrico[i][j]);
+
+    if (relacao.simetrica == 0) {
+        printf("\nMatriz Fecho Simetrico: \n");
+        for (int i = 0; i < relacao.tam_conjunto; i++){
+            for (int j = 0; j < relacao.tam_conjunto; j++){
+                printf(" %d ", matriz_fecho_simetrico[i][j]);
+            }
+            printf("\n");
         }
-        printf("\n");
     }
     // Concatena nome recebido por comando para o nome do arquivo no fecho
-    char nome_saida[200];
     snprintf(nome_saida, sizeof(nome_saida), "%s-sim.dot", StrSaida);
     gerar_dot(&relacao, nome_saida, matriz_fecho_simetrico);
 
@@ -341,16 +338,17 @@ int main(int argc, char **argv)
     // matriz_fecho recebe a matriz preenchida na sub-rotina com os arcos necessários para a relação 
     // ter a propriedade transitiva
     int** matriz_fecho_transitivo = fecho_transitivo(&relacao);
-    printf("\nMatriz Fecho Transitivo: \n");
-    for (int i = 0; i < relacao.tam_conjunto; i++){
-        for (int j = 0; j < relacao.tam_conjunto; j++){
-            printf(" %d ", matriz_fecho_transitivo[i][j]);
-        }
-        printf("\n");
-    }
 
+    if (relacao.transitiva == 0) {
+        printf("\nMatriz Fecho Transitivo: \n");
+        for (int i = 0; i < relacao.tam_conjunto; i++){
+            for (int j = 0; j < relacao.tam_conjunto; j++){
+                printf(" %d ", matriz_fecho_transitivo[i][j]);
+            }
+            printf("\n");
+        }
+    }
     // Concatena nome recebido por comando para o nome do arquivo no fecho
-    char nome_saida[200];
     snprintf(nome_saida, sizeof(nome_saida), "%s-tra.dot", StrSaida);
     gerar_dot(&relacao, nome_saida, matriz_fecho_transitivo);
 
