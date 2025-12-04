@@ -6,14 +6,59 @@
     - Yris Beatriz Silva 0117244
     - Maria Eduarda Siqueira Silva 0076969
 
-    Como rodar, primeiramente entramos na pasta do projeto e rodamos 
+    Para rodar, primeiramente entramos na pasta do projeto e rodamos 
     gcc -lm check-closure.c -o check-closure.bin
-
     ./check-closure.bin entrada.txt saida
+
+    Funções auxiliares:
+
+    // Mensagem de erro quando o arquivo não é compatível
+    void erro_arquivo();
+    
+    // Aloca memória suficiente para uma matriz de tamanho nxn
+    int **alocar_matriz(int n);
+
+    // Libera a memória que foi alocada
+    void liberar_matriz(int **matriz);
+    
+    // Lemos o arquivo enviado via linha de comando, aqui que mostramos os erros de formato
+    void ler_arquivo(FILE* fp, TipoRelacao* relacao);
+    
+    // Imprime a relação da matriz original normalmente no arquivo de saída, e imprime os 
+    // arcos a serem adicionados para o fecho em vermelho
+    void gerar_dot(TipoRelacao *relacao, char *arquivo_saida, int **matriz_fecho);
+
+    // Confere se a relação lida é reflexiva, logo, se xRx
+    int reflexiva(TipoRelacao *relacao);
+
+    // Recebe a struct para rodar a matriz original e procurar em quais pontos não 
+    // há xRx, nesse ponto ele preenche essa posição na matriz de fecho(que foi instanciada 
+    // como zero), e ao final retorna essa matriz com os arcos necessários para a relação
+    // ser reflexiva
+    int** fecho_reflexivo(TipoRelacao *relacao);
+
+    // Confere se a relação lida é simetrica, logo, se xRy então yRx
+    int simetrica(TipoRelacao *relacao);
+
+    // Recebe a struct para rodar a matriz original e procurar em quais pontos xRy mas não 
+    // há yRx, nesse ponto ele preenche essa posição na matriz de fecho(que foi instanciada 
+    // como zero), e ao final retorna essa matriz com os arcos necessários para a relação
+    // ser simetrica
+    int** fecho_simetrico(TipoRelacao *relacao);
+
+    // Confere se a relação lida é transitiva, logo, se xRy e yRz então xRz
+    int transitiva(TipoRelacao *relacao);
+
+    // Recebe a struct para rodar a matriz original e procurar em quais pontos xRy, yRz mas
+    // não há xRz, nesse ponto ele preenche essa posição na matriz de fecho(que foi instanciada 
+    // como zero), e ao final retorna essa matriz com os arcos necessários para a relação
+    // ser transitiva
+    int** fecho_transitivo(TipoRelacao *relacao);
 */
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <ctype.h>
 
 typedef struct
 {
@@ -26,7 +71,7 @@ typedef struct
 
 // Mensagem de Erro
 void erro_arquivo() {
-    printf("[ERRO] Arquivo incompatível.");
+    printf("[ERRO] Arquivo incompatível.\n");
     exit(0);
 }
 
@@ -54,9 +99,17 @@ void ler_arquivo(FILE* fp, TipoRelacao* relacao){
     // (x, y) das relações
     int x, y;
 
-    // Lê o tamanho do conjunto(n)
+    // Lê o tamanho do conjunto(n), se não houver "n numero", retorna erro
     if (fscanf(fp, "n %d", &relacao->tam_conjunto) != 1){
         erro_arquivo();
+    }
+    // Detecta se o resto da linha está vazia
+    int c;
+    while ((c = fgetc(fp)) != '\n' && c != EOF) {
+        // Se não for espaço, retorna erro
+        if (!isspace(c)) {
+            erro_arquivo();
+        }
     }
     
     printf("[SUCESSO] Tamanho do conjunto obtido: %d\n", relacao->tam_conjunto);
@@ -69,10 +122,21 @@ void ler_arquivo(FILE* fp, TipoRelacao* relacao){
         for (int j = 0; j < relacao->tam_conjunto; j++)
             relacao->matriz[i][j] = 0;
 
-    // Lê as relações(r)
-    while (fscanf(fp, " r %d %d", &x, &y) == 2)
-    {
-        relacao->matriz[x - 1][y - 1] = 1;
+    char letra;
+    // Lê as relações(r) e confere se tem dois números depois do r
+    while ((letra = fgetc(fp)) != EOF) {
+        if (letra == 'r') {
+            // Se a relação começa com r mas tem mais que x e y, retorna erro
+            if (fscanf(fp, " %d %d", &x, &y) != 2) {
+                erro_arquivo();
+            }
+            // Se x ou y for maior que o tamanho do conjunto, retorna erro
+            // Em um conjunto com 5 nós não tem como se relacionar com um nó 6, afinal ele não existe
+            if (x < 1 || x > relacao->tam_conjunto || y < 1 || y > relacao->tam_conjunto) {
+                erro_arquivo();
+            }
+            relacao->matriz[x-1][y-1] = 1;
+        }
     }
     
     printf("Matriz binária: \n");
